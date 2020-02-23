@@ -2,17 +2,19 @@ const { ProposalBuilder } = require("@celo/contractkit/lib/governance/proposals"
 const { CeloContract } = require("@celo/contractkit/lib/base");
 const { newKit } = require("@celo/contractkit");
 const bluebird = require("bluebird");
-const fs = require('fs');
+const fs = require("fs");
 const { RPC_ENDPOINT, PROPOSAL } = require("../config");
 
 const kit = newKit(RPC_ENDPOINT);
 const builder = new ProposalBuilder(kit);
 
-// proposalDrafts is a list of 1 or more proposal transaction objects
 // The example below is a simple proposal (consisting of only 1 method call)
 // to update the electable validator set min and max values.
-// For more complex proposals, you may need to add more method objects.
-const proposalDrafts = [
+// For more complex proposals, you may need to add more method tx objects.
+
+// proposalTxs is a list of 1 or more proposal method tx objects to be
+// executed should the proposal successfully passes
+const proposalTxs = [
   {
     // Name of the contract
     contractName: "Election",
@@ -32,7 +34,7 @@ const proposalDrafts = [
 const buildAndSubmitProposal = async () => {
   try {
     await bluebird.Promise.map(
-      proposalDrafts,
+      proposalTxs,
       async ({ contractName, contractMethod, contractMethodArguments, value }) => {
         // NOTE: There may not be a ContractKit wrapper available for all contracts (e.g. EpochRewards), which will result in an error
         const contract = await kit.contracts[`get${contractName}`]();
@@ -55,7 +57,7 @@ const buildAndSubmitProposal = async () => {
     });
 
     // Appends the proposal tx receipt to a file for review
-    return fs.appendFileSync('./proposalTxReceipts.txt', JSON.stringify(proposalTxReceipt));
+    return fs.appendFileSync("./proposalTxReceipts.txt", JSON.stringify(proposalTxReceipt));
   } catch (err) {
     throw err;
   }
