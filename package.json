@@ -7,12 +7,13 @@
     "@celo/contractkit": "^0.2.14"
   },
   "devDependencies": {
-    "nodemon": "^2.0.2"
+    "tsc-watch": "^4.1.0",
+    "tslint": "^6.0.0",
+    "typescript": "^3.8.2"
   },
   "scripts": {
-    "start": "node ./src/index.js",
-    "dev": "nodemon ./src/index.js",
-    "test": "mocha"
+    "start": "tsc && node ./dist/index.js",
+    "dev": "tsc-watch --onSuccess 'node ./dist/index.js'"
   },
   "repository": {
     "type": "git",
