@@ -1,7 +1,9 @@
 const { ProposalBuilder } = require("@celo/contractkit/lib/governance/proposals");
 const { CeloContract } = require("@celo/contractkit/lib/base");
 const { newKit } = require("@celo/contractkit");
-const { RPC_ENDPOINT } = require("../config");
+const bluebird = require("bluebird");
+const fs = require('fs');
+const { RPC_ENDPOINT, PROPOSAL } = require("../config");
 
 const kit = newKit(RPC_ENDPOINT);
 const builder = new ProposalBuilder(kit);
@@ -24,3 +26,39 @@ const proposalDrafts = [
     to: "",
   },
 ];
+
+// buildAndSubmitProposal marshals the proposal drafts by creating method tx objects
+// adding them to the builder instance. Afterward, it submits the proposal
+const buildAndSubmitProposal = async () => {
+  try {
+    await bluebird.Promise.map(
+      proposalDrafts,
+      async ({ contractName, contractMethod, contractMethodArguments, value }) => {
+        // NOTE: There may not be a ContractKit wrapper available for all contracts (e.g. EpochRewards), which will result in an error
+        const contract = await kit.contracts[`get${contractName}`]();
+        const contractMethodTx = contract.contract.methods[contractMethod].apply(this, contractMethodArguments);
+
+        return builder.addWeb3Tx(contractMethodTx, {
+          value,
+          to: contract.address,
+        });
+      },
+    );
+
+    const proposal = await builder.build();
+    const governance = await kit.contracts.getGovernance();
+
+    // Submit the proposal
+    const proposalTxReceipt = await governance.propose(proposal, PROPOSAL.DESCRIPTION_URL).sendAndWaitForReceipt({
+      from: PROPOSAL.PROPOSER,
+      value: PROPOSAL.DEPOSIT,
+    });
+
+    // Appends the proposal tx receipt to a file for review
+    return fs.appendFileSync('./proposalTxReceipts.txt', JSON.stringify(proposalTxReceipt));
+  } catch (err) {
+    throw err;
+  }
+};
+
+buildAndSubmitProposal();

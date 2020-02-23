@@ -4,7 +4,8 @@
   "description": "Create proposals for Celo governance",
   "main": "./src/index.js",
   "dependencies": {
-    "@celo/contractkit": "^0.2.14"
+    "@celo/contractkit": "^0.2.14",
+    "bluebird": "^3.7.2"
   },
   "devDependencies": {
     "tsc-watch": "^4.1.0",
